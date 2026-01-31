@@ -1,6 +1,7 @@
 import logging
 import importlib
 import sys
+from typing import List, Dict
 from datetime import datetime
 from ..core import config
 from ..core.database import get_db_connection
