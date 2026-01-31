@@ -103,7 +103,7 @@ def insert_api_ranking(ranking_data: List[Dict]) -> int:
             forme = normalize_form_history(history)
             
             # Verifier si l'equipe existe dans la table equipes
-            cursor.execute("SELECT id FROM equipes WHERE nom = ?", (team_name,))
+            cursor.execute("SELECT id FROM equipes WHERE nom = %s", (team_name,))
             result = cursor.fetchone()
             
             if result:
@@ -112,10 +112,10 @@ def insert_api_ranking(ranking_data: List[Dict]) -> int:
                 # CALCUL DES BUTS (Pour/Contre) depuis la table resultats
                 cursor.execute("""
                     SELECT 
-                        SUM(CASE WHEN equipe_dom_id = ? THEN score_dom ELSE score_ext END) as bp,
-                        SUM(CASE WHEN equipe_dom_id = ? THEN score_ext ELSE score_dom END) as bc
+                        SUM(CASE WHEN equipe_dom_id = %s THEN score_dom ELSE score_ext END) as bp,
+                        SUM(CASE WHEN equipe_dom_id = %s THEN score_ext ELSE score_dom END) as bc
                     FROM resultats 
-                    WHERE (equipe_dom_id = ? OR equipe_ext_id = ?) AND score_dom IS NOT NULL
+                    WHERE (equipe_dom_id = %s OR equipe_ext_id = %s) AND score_dom IS NOT NULL
                 """, (equipe_id, equipe_id, equipe_id, equipe_id))
                 stats_buts = cursor.fetchone()
                 buts_pour = stats_buts[0] if stats_buts and stats_buts[0] is not None else 0
@@ -124,14 +124,14 @@ def insert_api_ranking(ranking_data: List[Dict]) -> int:
                 # Inserer le classement avec les stats de buts
                 cursor.execute("""
                     INSERT INTO classement (journee, equipe_id, position, points, forme, buts_pour, buts_contre)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (journee, equipe_id, position, points, forme, buts_pour, buts_contre))
                 
                 # --- NOUVEAU : Historique Global (Classement Global) ---
                 # On insère aussi dans la table historique perpétuelle
                 cursor.execute("""
                     INSERT INTO classement_global (journee, equipe_id, position, points, forme)
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s)
                 """, (journee, equipe_id, position, points, forme))
                 
                 count += 1
@@ -180,9 +180,9 @@ def insert_api_results(results_data: List[Dict]) -> int:
                     score_ext = None
                 
                 # Recuperer les IDs des equipes
-                cursor.execute("SELECT id FROM equipes WHERE nom = ?", (home_team,))
+                cursor.execute("SELECT id FROM equipes WHERE nom = %s", (home_team,))
                 home_result = cursor.fetchone()
-                cursor.execute("SELECT id FROM equipes WHERE nom = ?", (away_team,))
+                cursor.execute("SELECT id FROM equipes WHERE nom = %s", (away_team,))
                 away_result = cursor.fetchone()
                 
                 if home_result and away_result:
@@ -192,7 +192,7 @@ def insert_api_results(results_data: List[Dict]) -> int:
                     # --- SMART CHECK : Verifier coherence avant UPDATE ---
                     cursor.execute("""
                         SELECT score_dom, score_ext FROM resultats 
-                        WHERE journee = ? AND equipe_dom_id = ? AND equipe_ext_id = ?
+                        WHERE journee = %s AND equipe_dom_id = %s AND equipe_ext_id = %s
                     """, (journee, home_id, away_id))
                     existing = cursor.fetchone()
                     
@@ -207,7 +207,7 @@ def insert_api_results(results_data: List[Dict]) -> int:
                     # Inserer ou mettre a jour le resultat
                     cursor.execute("""
                         INSERT INTO resultats (journee, equipe_dom_id, equipe_ext_id, score_dom, score_ext)
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
                         ON CONFLICT(journee, equipe_dom_id, equipe_ext_id) DO UPDATE SET
                             score_dom = excluded.score_dom,
                             score_ext = excluded.score_ext
@@ -219,15 +219,15 @@ def insert_api_results(results_data: List[Dict]) -> int:
                     # 1. Tenter un UPDATE d'abord
                     cursor.execute("""
                         UPDATE matches_global 
-                        SET score_dom = ?, score_ext = ?, status = 'TERMINE'
-                        WHERE journee = ? AND equipe_dom_id = ? AND equipe_ext_id = ?
+                        SET score_dom = %s, score_ext = %s, status = 'TERMINE'
+                        WHERE journee = %s AND equipe_dom_id = %s AND equipe_ext_id = %s
                     """, (score_dom, score_ext, journee, home_id, away_id))
                     
                     if cursor.rowcount == 0:
                         # Si pas trouvé (cas rare où on insère des résultats sans avoir scanné les cotes avant), on insère
                         cursor.execute("""
                             INSERT INTO matches_global (journee, equipe_dom_id, equipe_ext_id, score_dom, score_ext, status)
-                            VALUES (?, ?, ?, ?, ?, 'TERMINE')
+                            VALUES (%s, %s, %s, %s, %s, 'TERMINE')
                         """, (journee, home_id, away_id, score_dom, score_ext))
                     
                     count += 1
@@ -270,9 +270,9 @@ def insert_api_matches(matches_data: List[Dict]) -> int:
                 cote_2 = next((o["odds"] for o in odds if o["type"] == "2"), None)
                 
                 # Recuperer les IDs des equipes
-                cursor.execute("SELECT id FROM equipes WHERE nom = ?", (home_team,))
+                cursor.execute("SELECT id FROM equipes WHERE nom = %s", (home_team,))
                 home_result = cursor.fetchone()
-                cursor.execute("SELECT id FROM equipes WHERE nom = ?", (away_team,))
+                cursor.execute("SELECT id FROM equipes WHERE nom = %s", (away_team,))
                 away_result = cursor.fetchone()
                 
                 if home_result and away_result:
@@ -282,14 +282,14 @@ def insert_api_matches(matches_data: List[Dict]) -> int:
                     # 1. Inserer le match dans 'resultats' (scores NULL car pas encore joue)
                     cursor.execute("""
                         INSERT INTO resultats (journee, equipe_dom_id, equipe_ext_id, score_dom, score_ext)
-                        VALUES (?, ?, ?, NULL, NULL)
+                        VALUES (%s, %s, %s, NULL, NULL)
                         ON CONFLICT(journee, equipe_dom_id, equipe_ext_id) DO NOTHING
                     """, (journee, home_id, away_id))
                     
                     # 2. Inserer les cotes dans 'cotes'
                     cursor.execute("""
                         INSERT INTO cotes (journee, equipe_dom_id, equipe_ext_id, cote_1, cote_x, cote_2)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s, %s)
                         ON CONFLICT(journee, equipe_dom_id, equipe_ext_id) DO UPDATE SET
                             cote_1 = excluded.cote_1,
                             cote_x = excluded.cote_x,
@@ -301,7 +301,7 @@ def insert_api_matches(matches_data: List[Dict]) -> int:
                     # On vérifie si existe déjà pour ne pas dupliquer bêtement (pas de contrainte unique stricte demandée mais logique)
                     cursor.execute("""
                         SELECT id FROM matches_global 
-                        WHERE journee = ? AND equipe_dom_id = ? AND equipe_ext_id = ?
+                        WHERE journee = %s AND equipe_dom_id = %s AND equipe_ext_id = %s
                     """, (journee, home_id, away_id))
                     exists = cursor.fetchone()
                     
@@ -309,13 +309,13 @@ def insert_api_matches(matches_data: List[Dict]) -> int:
                         # Update des cotes si ça a bougé (Closing line evolution)
                         cursor.execute("""
                             UPDATE matches_global 
-                            SET cote_1 = ?, cote_x = ?, cote_2 = ?
-                            WHERE id = ?
+                            SET cote_1 = %s, cote_x = %s, cote_2 = %s
+                            WHERE id = %s
                         """, (cote_1, cote_x, cote_2, exists[0]))
                     else:
                         cursor.execute("""
                             INSERT INTO matches_global (journee, equipe_dom_id, equipe_ext_id, cote_1, cote_x, cote_2, status)
-                            VALUES (?, ?, ?, ?, ?, ?, 'A_VENIR')
+                            VALUES (%s, %s, %s, %s, %s, %s, 'A_VENIR')
                         """, (journee, home_id, away_id, cote_1, cote_x, cote_2))
                     
                     count += 1
@@ -337,7 +337,7 @@ def clean_old_odds(journee_min: int):
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM cotes WHERE journee < ?", (journee_min,))
+        cursor.execute("DELETE FROM cotes WHERE journee < %s", (journee_min,))
         deleted = cursor.rowcount
         logger.info(f"{deleted} cotes anciennes supprimees (journee < {journee_min})")
 

@@ -60,9 +60,9 @@ def extraire_features_classement(
         WHERE journee = (
             SELECT MAX(journee) 
             FROM classement_global 
-            WHERE journee < ?
+            WHERE journee < %s
         )
-        AND equipe_id IN (?, ?)
+        AND equipe_id IN (%s, %s)
     """, (journee, equipe_dom_id, equipe_ext_id))
     
     rows = cursor.fetchall()

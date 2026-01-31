@@ -31,7 +31,7 @@ def get_classement_snapshot(journee_actuelle: int, conn: sqlite3.Connection) -> 
         WHERE cg.journee = (
             SELECT MAX(journee) 
             FROM classement_global 
-            WHERE journee < ?
+            WHERE journee < %s
         )
         ORDER BY cg.position
     """
@@ -66,7 +66,7 @@ def get_match_data(match_id: int, conn: sqlite3.Connection) -> Optional[Dict]:
         FROM matches_global mg
         JOIN equipes e_dom ON mg.equipe_dom_id = e_dom.id
         JOIN equipes e_ext ON mg.equipe_ext_id = e_ext.id
-        WHERE mg.id = ?
+        WHERE mg.id = %s
     """
     cursor = conn.cursor()
     cursor.execute(query, (match_id,))
@@ -119,7 +119,7 @@ def get_matches_for_journee(journee: int, conn: sqlite3.Connection) -> List[Dict
         FROM matches_global mg
         JOIN equipes e_dom ON mg.equipe_dom_id = e_dom.id
         JOIN equipes e_ext ON mg.equipe_ext_id = e_ext.id
-        WHERE mg.journee = ?
+        WHERE mg.journee = %s
         ORDER BY mg.id
     """
     cursor = conn.cursor()
@@ -171,7 +171,7 @@ def create_session(
             type_session,
             version_ia,
             score_zeus
-        ) VALUES (?, ?, ?, 0)
+        ) VALUES (%s, %s, %s, 0)
     """, (capital_initial, type_session, version_ia))
     conn.commit()
     return cursor.lastrowid
@@ -228,7 +228,7 @@ def enregistrer_pari(
             bankroll_apres,
             probabilite_implicite,
             action_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         session_id, match_id, journee, type_pari, mise_ar,
         pourcentage_bankroll, cote_jouee, resultat, profit_net,
@@ -259,10 +259,10 @@ def finaliser_session(
     cursor.execute("""
         UPDATE sessions
         SET timestamp_fin = CURRENT_TIMESTAMP,
-            capital_final = ?,
-            profit_total = ?,
-            score_zeus = ?
-        WHERE session_id = ?
+            capital_final = %s,
+            profit_total = %s,
+            score_zeus = %s
+        WHERE session_id = %s
     """, (capital_final, profit_total, score_zeus, session_id))
     conn.commit()
 

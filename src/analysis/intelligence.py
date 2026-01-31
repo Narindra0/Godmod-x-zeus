@@ -38,10 +38,10 @@ def calculer_probabilite(equipe_dom_id, equipe_ext_id):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = ?", (equipe_dom_id,))
+            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = %s", (equipe_dom_id,))
             stats_dom = cursor.fetchone()
             
-            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = ?", (equipe_ext_id,))
+            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = %s", (equipe_ext_id,))
             stats_ext = cursor.fetchone()
     except Exception as e:
         logger.error(f"Erreur lors du calcul de probabilité : {e}", exc_info=True)
@@ -84,10 +84,10 @@ def calculer_probabilite_amelioree(equipe_dom_id, equipe_ext_id, cote_1, cote_x,
             cursor = conn.cursor()
             
             # Recup Stats
-            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = ?", (equipe_dom_id,))
+            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = %s", (equipe_dom_id,))
             stats_dom = cursor.fetchone()
             
-            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = ?", (equipe_ext_id,))
+            cursor.execute("SELECT points, forme FROM classement WHERE equipe_id = %s", (equipe_ext_id,))
             stats_ext = cursor.fetchone()
             
             if not stats_dom or not stats_ext:
@@ -176,7 +176,7 @@ def selectionner_meilleurs_matchs_ameliore(journee):
                 return []
 
             if score_ia < 60 and journee > pause_until + 3:
-                cursor.execute("UPDATE score_ia SET pause_until = ? WHERE id = 1", (journee + 2,))
+                cursor.execute("UPDATE score_ia SET pause_until = %s WHERE id = 1", (journee + 2,))
                 return []
             
             # 2. IA Adaptative (PRISMA)
@@ -185,7 +185,7 @@ def selectionner_meilleurs_matchs_ameliore(journee):
             print(f"   [PRISMA] Mode {mode_descr} | Seuil: {seuil_confiance}")
             
             # 3. Récupération & Analyse des matchs
-            cursor.execute("SELECT equipe_dom_id, equipe_ext_id, cote_1, cote_x, cote_2 FROM cotes WHERE journee = ?", (journee,))
+            cursor.execute("SELECT equipe_dom_id, equipe_ext_id, cote_1, cote_x, cote_2 FROM cotes WHERE journee = %s", (journee,))
             matchs = cursor.fetchall()
             
             cursor.execute("SELECT id, nom FROM equipes")
@@ -208,7 +208,7 @@ def selectionner_meilleurs_matchs_ameliore(journee):
             
             # 5. DB Save
             for p in final_selection:
-                cursor.execute("INSERT INTO predictions (journee, equipe_dom_id, equipe_ext_id, prediction) VALUES (?, ?, ?, ?)",
+                cursor.execute("INSERT INTO predictions (journee, equipe_dom_id, equipe_ext_id, prediction) VALUES (%s, %s, %s, %s)",
                              (journee, p['equipe_dom_id'], p['equipe_ext_id'], p['prediction']))
             
             return final_selection
@@ -223,10 +223,10 @@ def analyser_buts_recents_internal(cursor, equipe_id):
     try:
         cursor.execute("""
             SELECT 
-                CASE WHEN equipe_dom_id = ? THEN score_dom ELSE score_ext END,
-                CASE WHEN equipe_dom_id = ? THEN score_ext ELSE score_dom END
+                CASE WHEN equipe_dom_id = %s THEN score_dom ELSE score_ext END,
+                CASE WHEN equipe_dom_id = %s THEN score_ext ELSE score_dom END
             FROM resultats 
-            WHERE (equipe_dom_id = ? OR equipe_ext_id = ?) AND score_dom IS NOT NULL
+            WHERE (equipe_dom_id = %s OR equipe_ext_id = %s) AND score_dom IS NOT NULL
             ORDER BY journee DESC LIMIT 5
         """, (equipe_id, equipe_id, equipe_id, equipe_id))
         res = cursor.fetchall()
@@ -242,7 +242,7 @@ def analyser_confrontations_directes(equipe_dom_id, equipe_ext_id):
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT score_dom, score_ext FROM resultats 
-                WHERE equipe_dom_id = ? AND equipe_ext_id = ? AND score_dom IS NOT NULL
+                WHERE equipe_dom_id = %s AND equipe_ext_id = %s AND score_dom IS NOT NULL
                 ORDER BY journee DESC LIMIT 5
             """, (equipe_dom_id, equipe_ext_id))
             hist = cursor.fetchall()
@@ -331,7 +331,7 @@ def mettre_a_jour_scoring():
                 
                 cursor.execute('''
                     SELECT score_dom, score_ext FROM resultats 
-                    WHERE journee = ? AND equipe_dom_id = ? AND equipe_ext_id = ?
+                    WHERE journee = %s AND equipe_dom_id = %s AND equipe_ext_id = %s
                 ''', (j, dom_id, ext_id))
                 res = cursor.fetchone()
                 
@@ -347,26 +347,26 @@ def mettre_a_jour_scoring():
                     
                     cursor.execute('''
                         UPDATE predictions 
-                        SET resultat = ?, succes = ?, points_gagnes = ?
-                        WHERE id = ?
+                        SET resultat = %s, succes = %s, points_gagnes = %s
+                        WHERE id = %s
                     ''', (resultat_reel, succes, points, pid))
                     
                     # Mise à jour du score IA global
                     if succes:
                         cursor.execute('''
                             UPDATE score_ia 
-                            SET score = score + ?, 
+                            SET score = score + %s, 
                                 predictions_reussies = predictions_reussies + 1, 
                                 predictions_total = predictions_total + 1, 
-                                derniere_maj = datetime("now") 
+                                derniere_maj = NOW() 
                             WHERE id = 1
                         ''', (points,))
                     else:
                         cursor.execute('''
                             UPDATE score_ia 
-                            SET score = score + ?, 
+                            SET score = score + %s, 
                                 predictions_total = predictions_total + 1, 
-                                derniere_maj = datetime("now") 
+                                derniere_maj = NOW() 
                             WHERE id = 1
                         ''', (points,))
     except Exception as e:
