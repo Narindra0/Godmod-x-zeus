@@ -120,20 +120,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- LOGIQUE DE DONNÉES ---
+def safe_read_sql(query, conn):
+    """
+    Exécute une requête SQL brute et retourne un DataFrame pandas.
+    Évite le warning 'pandas only supports SQLAlchemy' avec des connexions brutes.
+    """
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            if cursor.description:
+                columns = [desc[0] for desc in cursor.description]
+                data = cursor.fetchall()
+                return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Erreur SQL pandas : {e} - Query: {query}")
+        return pd.DataFrame()
+
 @st.cache_data(ttl=5)
 def load_all_data():
     with database.get_db_connection() as conn:
-        # Note: avec psycopg2 et sqlite3.Row, l'accès est similaire, mais pour pandas read_sql, l'objet conn suffit.
-        
         # Performance
-        df_perf = pd.read_sql_query("SELECT SUM(points_gagnes) as score, COUNT(*) as total FROM predictions WHERE succes IS NOT NULL", conn)
-        df_wins = pd.read_sql_query("SELECT COUNT(*) as wins FROM predictions WHERE succes = 1", conn)
+        df_perf = safe_read_sql("SELECT SUM(points_gagnes) as score, COUNT(*) as total FROM predictions WHERE succes IS NOT NULL", conn)
+        df_wins = safe_read_sql("SELECT COUNT(*) as wins FROM predictions WHERE succes = 1", conn)
         
         # Score IA global
-        df_score_ia = pd.read_sql_query("SELECT score, predictions_total, predictions_reussies, pause_until FROM score_ia LIMIT 1", conn)
+        df_score_ia = safe_read_sql("SELECT score, predictions_total, predictions_reussies, pause_until FROM score_ia LIMIT 1", conn)
         
         # Prédictions
-        df_preds = pd.read_sql_query("""
+        df_preds = safe_read_sql("""
             SELECT p.journee as J, e1.nom as Domicile, e2.nom as Exterieur, p.prediction as Prono, p.resultat as Reel, p.succes
             FROM predictions p
             JOIN equipes e1 ON p.equipe_dom_id = e1.id
@@ -142,7 +157,7 @@ def load_all_data():
         """, conn)
         
         # Résultats réels
-        df_results = pd.read_sql_query("""
+        df_results = safe_read_sql("""
             SELECT r.journee as J, e1.nom as Domicile, CAST(r.score_dom AS VARCHAR) || ' - ' || CAST(r.score_ext AS VARCHAR) as Score, e2.nom as Exterieur
             FROM resultats r
             JOIN equipes e1 ON r.equipe_dom_id = e1.id
@@ -151,7 +166,7 @@ def load_all_data():
         """, conn)
         
         # Classement
-        df_ranking = pd.read_sql_query("""
+        df_ranking = safe_read_sql("""
             SELECT e.nom as Equipe, c.points as Pts, c.forme as Forme
             FROM classement c
             JOIN equipes e ON c.equipe_id = e.id
@@ -159,7 +174,7 @@ def load_all_data():
         """, conn)
         
         # Trend
-        df_trend = pd.read_sql_query("SELECT id, points_gagnes FROM predictions WHERE succes IS NOT NULL ORDER BY id", conn)
+        df_trend = safe_read_sql("SELECT id, points_gagnes FROM predictions WHERE succes IS NOT NULL ORDER BY id", conn)
         
         return df_perf, df_wins, df_preds, df_results, df_ranking, df_trend, df_score_ia
 
