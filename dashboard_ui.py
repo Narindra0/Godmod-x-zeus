@@ -225,7 +225,7 @@ else:
             with tab_preds:
                 st.subheader("Dernières Prédictions")
                 if not df_preds.empty:
-                    st.dataframe(df_preds, use_container_width=True, hide_index=True)
+                    st.dataframe(df_preds, width="stretch", hide_index=True)
                 else:
                     st.info("En attente de prédictions...")
 
@@ -242,14 +242,14 @@ else:
                     )
                     # Filtrer les résultats pour la journée sélectionnée
                     df_filtered = df_results[df_results['J'] == journee_selectionnee]
-                    st.dataframe(df_filtered, use_container_width=True, hide_index=True)
+                    st.dataframe(df_filtered, width="stretch", hide_index=True)
                 else:
                     st.info("Aucun résultat enregistré.")
 
         with col_right:
             st.subheader("📊 Top Classement")
             if not df_ranking.empty:
-                st.dataframe(df_ranking.head(10), use_container_width=True, hide_index=True)
+                st.dataframe(df_ranking.head(10), width="stretch", hide_index=True)
             else:
                 st.info("Classement indisponible")
             
