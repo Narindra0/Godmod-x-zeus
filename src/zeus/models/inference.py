@@ -19,13 +19,22 @@ def get_zeus_model(model_path: str = "./models/zeus/best/best_model.zip") -> Opt
     """Charge et retourne le modèle ZEUS (Singleton)."""
     global _ZEUS_MODEL
     if _ZEUS_MODEL is None:
+        # 1. Vérifier si le modèle existe localement
+        if not os.path.exists(model_path):
+            print("ℹ️ Modèle local introuvable. Tentative de téléchargement depuis Hugging Face...")
+            from ...core.storage import download_model_from_hf
+            download_model_from_hf()
+            
+        # 2. Charger le modèle si présent (après téléchargement éventuel)
         if os.path.exists(model_path):
             try:
                 _ZEUS_MODEL = PPO.load(model_path)
+                print("✅ Modèle ZEUS chargé avec succès.")
             except Exception as e:
                 print(f"❌ Erreur chargement ZEUS : {e}")
                 return None
         else:
+            print("⚠️ Aucun modèle ZEUS disponible (ni local, ni distant).")
             return None
     return _ZEUS_MODEL
 

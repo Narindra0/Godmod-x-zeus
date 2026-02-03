@@ -49,3 +49,7 @@ USE_SELECTION_AMELIOREE = True
 # État de ZEUS pendant l'entraînement automatique
 # Si True, ZEUS n'émet pas de prédictions pour éviter les conflits
 ZEUS_DEEP_SLEEP = False
+
+# Configuration Hugging Face Hub (Stockage des modèles)
+HF_REPO_ID = os.getenv("HF_REPO_ID", "votre-username/votre-repo")
+HF_TOKEN = os.getenv("HF_TOKEN")
