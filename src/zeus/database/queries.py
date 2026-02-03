@@ -2,8 +2,7 @@
 Requêtes SQL sécurisées pour ZEUS avec isolation temporelle.
 """
 
-import sqlite3
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
 
 

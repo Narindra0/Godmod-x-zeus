@@ -5,8 +5,10 @@ Pipeline d'entraînement principal pour ZEUS.
 import os
 from typing import Optional
 from ..environment.betting_env import BettingEnv
+from ..environment.betting_env import BettingEnv
 from ..models.ppo_agent import create_ppo_agent, create_callbacks
 from ..database.queries import get_available_seasons
+from ...core.database import get_db_connection
 
 
 def train_zeus_agent(
@@ -45,10 +47,8 @@ def train_zeus_agent(
     
     # Auto-détecter les saisons si non spécifié
     if journee_debut_train is None:
-        import sqlite3
-        conn = sqlite3.connect(db_path)
-        seasons = get_available_seasons(conn)
-        conn.close()
+        with get_db_connection() as conn:
+            seasons = get_available_seasons(conn)
         
         if len(seasons) < 2:
             raise ValueError(

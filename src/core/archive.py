@@ -109,21 +109,25 @@ def archiver_session() -> str:
     Returns:
         Chemin du fichier CSV créé
     """
-    # ÉTAPE 1 : Backup de sécurité automatique
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_dir = os.path.join(os.path.dirname(config.DB_NAME), "data", "backup")
-    os.makedirs(backup_dir, exist_ok=True)
-    
-    backup_filename = f"backup_godmod_{timestamp}.db"
-    backup_path = os.path.join(backup_dir, backup_filename)
-    
-    try:
-        shutil.copy2(config.DB_NAME, backup_path)
-        logger.info(f"📦 Backup créé : {backup_path}")
-        print(f"📦 Backup de sécurité créé : {backup_path}")
-    except Exception as e:
-        logger.error(f"Erreur lors du backup : {e}", exc_info=True)
-        print(f"⚠️ Échec du backup (on continue quand même) : {e}")
+    # ÉTAPE 1 : Backup de sécurité automatique (Seulement pour SQLite local)
+    if not config.DATABASE_URL:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = os.path.join(os.path.dirname(config.DB_NAME), "data", "backup")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        backup_filename = f"backup_godmod_{timestamp}.db"
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        try:
+            if os.path.exists(config.DB_NAME):
+                shutil.copy2(config.DB_NAME, backup_path)
+                logger.info(f"📦 Backup créé : {backup_path}")
+                print(f"📦 Backup de sécurité créé : {backup_path}")
+        except Exception as e:
+            logger.error(f"Erreur lors du backup : {e}", exc_info=True)
+            print(f"⚠️ Échec du backup (on continue quand même) : {e}")
+    else:
+        logger.info("ℹ️ Skip backup matériel (PostgreSQL détecté). L'archivage se fera via export CSV.")
     
     # ÉTAPE 2 : Créer le dossier archives si nécessaire
     os.makedirs(ARCHIVES_DIR, exist_ok=True)

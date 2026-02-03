@@ -5,9 +5,10 @@ Environnement Gymnasium pour l'agent ZEUS.
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-import sqlite3
 from typing import Dict, List, Optional, Tuple, Any
 import random
+
+from ...core.database import get_db_connection
 
 from ..database.queries import (
     get_matches_for_journee,
@@ -98,7 +99,7 @@ class BettingEnv(gym.Env):
         self.matches_restants: List[Dict] = []
         self.match_actuel: Optional[Dict] = None
         self.session_id: Optional[int] = None
-        self.conn: Optional[sqlite3.Connection] = None
+        self.conn: Any = None
         
         # Historique pour métriques
         self.historique_capital = []
@@ -128,8 +129,10 @@ class BettingEnv(gym.Env):
         
         # Connexion DB
         if self.conn is None:
-            self.conn = sqlite3.connect(self.db_path)
-            self.conn.row_factory = sqlite3.Row
+            # Note: We use the context manager manually here or just get a connection
+            # But BettingEnv usually keeps a connection open for the episode.
+            # In a RL env, we might want to handle this carefully.
+            self.conn = get_db_connection().__enter__()
         
         # Créer session de tracking
         type_session = 'TRAINING' if self.mode == 'train' else 'EVALUATION'

@@ -4,7 +4,6 @@ Gère le trigger, l'entraînement global, et la promotion du modèle.
 """
 
 import time
-import sqlite3
 import os
 import logging
 from .trainer import train_zeus_agent
@@ -12,6 +11,7 @@ from ..database.queries import check_new_season_available, get_last_training_met
 from ..models.comparison import evaluer_robustesse, doit_promouvoir, deployer_modele
 from ..environment.betting_env import BettingEnv
 from ...core import config
+from ...core.database import get_db_connection
 from stable_baselines3 import PPO
 
 # Configuration du logging
@@ -31,16 +31,15 @@ def exit_deep_sleep():
     config.ZEUS_DEEP_SLEEP = False
 
 
-def trigger_zeus_improvement(db_path: str = "data/godmod.db"):
+def trigger_zeus_improvement(db_path: str = None):
     """
     Exécute un cycle complet d'amélioration ZEUS.
     Peut être appelé manuellement ou via un trigger.
     """
     try:
-        conn = sqlite3.connect(db_path)
-        
-        if check_new_season_available(conn):
-            logger.info("🔔 Nouvelle saison détectée ! Lancement du cycle d'amélioration...")
+        with get_db_connection() as conn:
+            if check_new_season_available(conn):
+                logger.info("🔔 Nouvelle saison détectée ! Lancement du cycle d'amélioration...")
             
             # 1. Sommeil Profond
             enter_deep_sleep()
@@ -101,7 +100,7 @@ def trigger_zeus_improvement(db_path: str = "data/godmod.db"):
         exit_deep_sleep() # Sécurité
 
 
-def run_self_improvement_loop(db_path: str = "data/godmod.db"):
+def run_self_improvement_loop(db_path: str = None):
     """
     Boucle principale de monitoring pour l'auto-amélioration.
     """
