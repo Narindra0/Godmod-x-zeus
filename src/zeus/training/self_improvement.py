@@ -40,58 +40,49 @@ def trigger_zeus_improvement(db_path: str = None):
         with get_db_connection() as conn:
             if check_new_season_available(conn):
                 logger.info("🔔 Nouvelle saison détectée ! Lancement du cycle d'amélioration...")
-            
-            # 1. Sommeil Profond
-            enter_deep_sleep()
-            
-            # 2. Récupérer métadonnées actuelles
-            last_meta = get_last_training_metadata(conn)
-            old_model_path = "./models/zeus/best/best_model.zip"
-            
-            # 3. Entraînement Global intensif
-            # On utilise une version incrémentée
-            try:
-                version_num = float(last_meta['version'].replace('ZEUS_v', ''))
-                new_version = f"ZEUS_v{version_num + 0.1:.1f}"
-            except:
-                new_version = "ZEUS_v1.0"
-            
-            logger.info(f"🏋️ Entraînement de la version {new_version} sur tout l'historique...")
-            new_model = train_zeus_agent(
-                db_path=db_path,
-                n_timesteps=500_000, # Entraînement intensif
-                version_ia=new_version
-            )
-            
-            # 4. Évaluation et Comparaison
-            logger.info("📊 Comparaison des performances...")
-            
-            # Env d'évaluation (dernière saison)
-            eval_env = BettingEnv(db_path=db_path, mode='eval')
-            
-            # Métriques nouveau modèle
-            new_metrics = evaluer_robustesse(new_model, eval_env)
-            
-            # Métriques ancien modèle (si existant)
-            old_metrics = {
-                'avg_roi': -100, 'std_roi': 100, 'survival_rate': 0
-            }
-            
-            if os.path.exists(old_model_path):
-                old_model = PPO.load(old_model_path)
-                old_metrics = evaluer_robustesse(old_model, eval_env)
-            
-            # 5. Promotion
-            if doit_promouvoir(new_metrics, old_metrics):
-                logger.info(f"🏆 Promotion de la version {new_version} !")
-                deployer_modele(f"./models/zeus/zeus_final_{new_version}.zip")
+                
+                # 1. Sommeil Profond
+                enter_deep_sleep()
+                
+                # 2. Récupérer métadonnées actuelles
+                last_meta = get_last_training_metadata(conn)
+                old_model_path = "./models/zeus/best/best_model.zip"
+                
+                # 3. Entraînement Global intensif
+                try:
+                    version_num = float(last_meta['version'].replace('ZEUS_v', ''))
+                    new_version = f"ZEUS_v{version_num + 0.1:.1f}"
+                except:
+                    new_version = "ZEUS_v1.0"
+                
+                logger.info(f"🏋️ Entraînement de la version {new_version} sur tout l'historique...")
+                new_model = train_zeus_agent(
+                    db_path=db_path,
+                    n_timesteps=500_000,
+                    version_ia=new_version
+                )
+                
+                # 4. Évaluation et Comparaison
+                logger.info("📊 Comparaison des performances...")
+                eval_env = BettingEnv(db_path=db_path, mode='eval')
+                new_metrics = evaluer_robustesse(new_model, eval_env)
+                
+                old_metrics = {'avg_roi': -100, 'std_roi': 100, 'survival_rate': 0}
+                if os.path.exists(old_model_path):
+                    old_model = PPO.load(old_model_path)
+                    old_metrics = evaluer_robustesse(old_model, eval_env)
+                
+                # 5. Promotion
+                if doit_promouvoir(new_metrics, old_metrics):
+                    logger.info(f"🏆 Promotion de la version {new_version} !")
+                    deployer_modele(f"./models/zeus/zeus_final_{new_version}.zip")
+                else:
+                    logger.info("❌ Le nouveau modèle n'a pas surpassé l'ancien. Maintien du modèle actuel.")
+                
+                # 6. Réveil
+                exit_deep_sleep()
             else:
-                logger.info("❌ Le nouveau modèle n'a pas surpassé l'ancien. Maintien du modèle actuel.")
-            
-            # 6. Réveil
-            exit_deep_sleep()
-        else:
-            logger.info("ℹ️ Pas assez de nouvelles données pour un réentraînement (besoin d'une saison complète).")
+                logger.info("ℹ️ Pas assez de nouvelles données pour un réentraînement (besoin d'une saison complète).")
             
         conn.close()
         
