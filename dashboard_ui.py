@@ -149,7 +149,7 @@ def load_all_data():
         
         # Prédictions
         df_preds = safe_read_sql("""
-            SELECT p.journee as J, e1.nom as Domicile, e2.nom as Exterieur, p.prediction as Prono, p.resultat as Reel, p.succes
+            SELECT p.journee as "J", e1.nom as "Domicile", e2.nom as "Exterieur", p.prediction as "Prono", p.resultat as "Reel", p.succes
             FROM predictions p
             JOIN equipes e1 ON p.equipe_dom_id = e1.id
             JOIN equipes e2 ON p.equipe_ext_id = e2.id
@@ -158,7 +158,7 @@ def load_all_data():
         
         # Résultats réels
         df_results = safe_read_sql("""
-            SELECT r.journee as J, e1.nom as Domicile, CAST(r.score_dom AS VARCHAR) || ' - ' || CAST(r.score_ext AS VARCHAR) as Score, e2.nom as Exterieur
+            SELECT r.journee as "J", e1.nom as "Domicile", CAST(r.score_dom AS VARCHAR) || ' - ' || CAST(r.score_ext AS VARCHAR) as "Score", e2.nom as "Exterieur"
             FROM resultats r
             JOIN equipes e1 ON r.equipe_dom_id = e1.id
             JOIN equipes e2 ON r.equipe_ext_id = e2.id
@@ -167,7 +167,7 @@ def load_all_data():
         
         # Classement
         df_ranking = safe_read_sql("""
-            SELECT e.nom as Equipe, c.points as Pts, c.forme as Forme
+            SELECT e.nom as "Equipe", c.points as "Pts", c.forme as "Forme"
             FROM classement c
             JOIN equipes e ON c.equipe_id = e.id
             ORDER BY c.points DESC
