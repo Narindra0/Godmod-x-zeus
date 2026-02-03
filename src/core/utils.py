@@ -1,6 +1,6 @@
 import time
 import re
-import sqlite3
+from typing import Any
 from . import config
 
 # Cache global pour les IDs d'équipes {nom: id}
@@ -16,7 +16,7 @@ def get_equipe_id(nom, conn=None):
         from .database import get_db_connection
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM equipes WHERE nom = ?", (nom,))
+            cursor.execute("SELECT id FROM equipes WHERE nom = %s", (nom,))
             res = cursor.fetchone()
             
             if res:
@@ -26,7 +26,7 @@ def get_equipe_id(nom, conn=None):
     else:
         # Utilisation de la connexion fournie
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM equipes WHERE nom = ?", (nom,))
+        cursor.execute("SELECT id FROM equipes WHERE nom = %s", (nom,))
         res = cursor.fetchone()
         
         if res:

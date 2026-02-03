@@ -4,9 +4,7 @@ Gère la conversion des données de match en actions concrètes.
 """
 
 import os
-import sqlite3
-import numpy as np
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 from stable_baselines3 import PPO
 
 from ..environment.observation import construire_observation
@@ -45,7 +43,7 @@ def obtenir_action_details(action_id: int) -> Dict:
 def predire_pari_zeus(
     model: PPO,
     match_data: Dict,
-    conn: sqlite3.Connection
+    conn: Any
 ) -> Tuple[int, Dict]:
     """
     Génère une prédiction ZEUS pour un match donné.

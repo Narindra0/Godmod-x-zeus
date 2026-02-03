@@ -3,8 +3,7 @@ Extraction et normalisation des features pour l'observation space.
 """
 
 import numpy as np
-from typing import Dict, Optional
-import sqlite3
+from typing import Dict, Optional, Any
 
 
 def calculer_momentum(forme: Optional[str]) -> float:
@@ -37,7 +36,7 @@ def extraire_features_classement(
     equipe_dom_id: int,
     equipe_ext_id: int,
     journee: int,
-    conn: sqlite3.Connection
+    conn: Any
 ) -> Dict[str, float]:
     """
     Extrait les features de classement pour les deux équipes.
@@ -135,7 +134,7 @@ def construire_observation(
     cote_1: float,
     cote_x: float,
     cote_2: float,
-    conn: sqlite3.Connection
+    conn: Any
 ) -> np.ndarray:
     """
     Construit le vecteur d'observation complet pour l'agent RL.

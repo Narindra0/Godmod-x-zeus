@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
 
 
-def get_classement_snapshot(journee_actuelle: int, conn: sqlite3.Connection) -> pd.DataFrame:
+def get_classement_snapshot(journee_actuelle: int, conn: Any) -> pd.DataFrame:
     """
     Récupère le classement des équipes AVANT le match day actuel.
     CRITIQUE: Évite le data leakage en utilisant journee < journee_actuelle.
@@ -37,7 +37,7 @@ def get_classement_snapshot(journee_actuelle: int, conn: sqlite3.Connection) -> 
     return pd.read_sql(query, conn, params=(journee_actuelle,))
 
 
-def get_match_data(match_id: int, conn: sqlite3.Connection) -> Optional[Dict]:
+def get_match_data(match_id: int, conn: Any) -> Optional[Dict]:
     """
     Récupère les données d'un match spécifique.
     
@@ -90,7 +90,7 @@ def get_match_data(match_id: int, conn: sqlite3.Connection) -> Optional[Dict]:
     }
 
 
-def get_matches_for_journee(journee: int, conn: sqlite3.Connection) -> List[Dict]:
+def get_matches_for_journee(journee: int, conn: Any) -> List[Dict]:
     """
     Récupère tous les matchs d'une journée spécifique.
     
@@ -149,7 +149,7 @@ def create_session(
     capital_initial: int,
     type_session: str,
     version_ia: str,
-    conn: sqlite3.Connection
+    conn: Any
 ) -> int:
     """
     Crée une nouvelle session ZEUS.
@@ -189,7 +189,7 @@ def enregistrer_pari(
     bankroll_apres: int,
     probabilite_implicite: Optional[float],
     action_id: int,
-    conn: sqlite3.Connection
+    conn: Any
 ) -> int:
     """
     Enregistre un pari dans l'historique.
@@ -242,7 +242,7 @@ def finaliser_session(
     capital_final: int,
     profit_total: int,
     score_zeus: int,
-    conn: sqlite3.Connection
+    conn: Any
 ):
     """
     Finalise une session avec les résultats finaux.
@@ -266,7 +266,7 @@ def finaliser_session(
     conn.commit()
 
 
-def get_available_seasons(conn: sqlite3.Connection) -> List[int]:
+def get_available_seasons(conn: Any) -> List[int]:
     """
     Récupère la liste des saisons disponibles (groupes de 38 journées).
     
@@ -292,7 +292,7 @@ def get_available_seasons(conn: sqlite3.Connection) -> List[int]:
     return seasons
 
 
-def get_last_training_metadata(conn: sqlite3.Connection) -> Dict:
+def get_last_training_metadata(conn: Any) -> Dict:
     """
     Récupère les métadonnées de la dernière session d'entraînement réussie.
     """
@@ -310,7 +310,7 @@ def get_last_training_metadata(conn: sqlite3.Connection) -> Dict:
     return {'version': 'v0', 'max_journee': 0, 'id': None}
 
 
-def get_completed_journees_count(conn: sqlite3.Connection) -> int:
+def get_completed_journees_count(conn: Any) -> int:
     """
     Retourne la dernière journée complétée.
     """
@@ -320,7 +320,7 @@ def get_completed_journees_count(conn: sqlite3.Connection) -> int:
     return row[0] if row[0] else 0
 
 
-def check_new_season_available(conn: sqlite3.Connection) -> bool:
+def check_new_season_available(conn: Any) -> bool:
     """
     Vérifie si une nouvelle saison complète (38 j) est disponible depuis le dernier entraînement.
     """

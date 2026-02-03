@@ -1,6 +1,6 @@
 import csv
 import os
-import sqlite3
+from typing import Any
 import sys
 import logging
 from pathlib import Path
@@ -101,7 +101,7 @@ def import_session(filepath, session_index, team_map, conn):
             # Check for existing
             cursor.execute("""
                 SELECT id FROM matches_global 
-                WHERE journee = ? AND equipe_dom_id = ? AND equipe_ext_id = ?
+                WHERE journee = %s AND equipe_dom_id = %s AND equipe_ext_id = %s
             """, (j, dom_id, ext_id))
             
             if cursor.fetchone():
@@ -109,7 +109,7 @@ def import_session(filepath, session_index, team_map, conn):
                 
             cursor.execute("""
                 INSERT INTO matches_global (journee, equipe_dom_id, equipe_ext_id, cote_1, cote_x, cote_2, status, score_dom, score_ext)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (j, dom_id, ext_id, c1, cx, c2, status, sd, se))
             m_count += 1
         except Exception as e:
@@ -133,7 +133,7 @@ def import_session(filepath, session_index, team_map, conn):
             # Check for existing
             cursor.execute("""
                 SELECT id FROM classement_global 
-                WHERE journee = ? AND equipe_id = ?
+                WHERE journee = %s AND equipe_id = %s
             """, (j, e_id))
             
             if cursor.fetchone():
@@ -141,7 +141,7 @@ def import_session(filepath, session_index, team_map, conn):
                 
             cursor.execute("""
                 INSERT INTO classement_global (journee, equipe_id, position, points, forme)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
             """, (j, e_id, pos, pts, forme))
             r_count += 1
         except Exception as e:

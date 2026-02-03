@@ -6,7 +6,6 @@ Version: 2.1
 Date: Janvier 2025
 """
 
-import sqlite3
 import logging
 from typing import List, Dict
 from datetime import datetime
@@ -380,4 +379,4 @@ if __name__ == "__main__":
     
     print("\n" + "=" * 60)
     print("[SUCCESS] Tests d'integration termines")
-    print("Verifiez la base de donnees avec un outil SQLite")
+    print("Verifiez la base de donnees avec un outil PostgreSQL")
